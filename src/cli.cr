@@ -15,6 +15,10 @@ options = Options.new
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: pixelfont STRING -f PATH [options]"
+  parser.on("-v", "--version", "Show version") do
+    puts "Pixelfont version #{Pixelfont::VERSION}\nhttps://github.com/SleepingInsomniac/pixelfont"
+    exit(0)
+  end
   parser.on("-f PATH", "--font=PATH", "Path to the font file") { |path| options.path = path }
   parser.on("-l DIST", "--leading=DIST", "Space between lines") { |dist| options.leading = dist.to_i8 }
   parser.on("-l DIST", "--tracking=DIST", "Space between glyphs") { |dist| options.leading = dist.to_i8 }
@@ -38,13 +42,12 @@ when :display
     font = Pixelfont::Font.new(path)
     font.leading = options.leading
     font.tracking = options.tracking
-    if string = ARGV[0]?
+
+    ARGV.each do |string|
       puts font.to_s(string, options.fore, options.back)
-    else
-      STDERR.puts "Usage: pixelfont STRING -f PATH [options]\n" \
-                  "                 ~~~~~~"
     end
   else
+    STDERR.puts "Specify a font path:"
     STDERR.puts "Usage: pixelfont STRING -f PATH [options]\n" \
                 "                        ~~~~~~~"
   end

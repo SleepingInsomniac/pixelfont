@@ -1,5 +1,5 @@
 module Pixelfont
-  VERSION = "0.1.0"
+  VERSION = {{ `shards version`.chomp.stringify }}
 end
 
 require "./pixelfont/font"
