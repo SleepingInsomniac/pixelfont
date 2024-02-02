@@ -1,5 +1,13 @@
 # Pixelfont
 
+    ████
+    █   █   █               ███     ██               █
+    █   █       █   █  ███    █    █  █  ███  █ ██  █████
+    ████  ███    █ █  █   █   █    █    █   █ ██  █  █
+    █       █     █   █████   █   ███   █   █ █   █  █
+    █       █    █ █  █       █    █    █   █ █   █  █
+    █      ███  █   █  ████   ███  █     ███  █   █   ██
+
 When you want a font, but are kinda lazy.
 
 ## Installation
@@ -18,6 +26,19 @@ When you want a font, but are kinda lazy.
 
 ```crystal
 require "pixelfont"
+
+font = Pixelfont::Font.new
+
+font.draw("Hello, World!") do |px, py, on|
+  my_screen[px, py] = RGB.new(0, 0, 0) if on
+end
+```
+
+## Cli
+
+```zsh
+shards build --release
+./bin/pixelfont -f fonts/pixel-5x7 "Hello, World!"
 ```
 
 ## Contributing
