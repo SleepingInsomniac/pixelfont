@@ -38,7 +38,7 @@ end
 
 ```zsh
 shards build --release
-./bin/pixelfont -f fonts/pixel-5x7 "Hello, World!"
+./bin/pixelfont -f fonts/pixel-5x7 display "Hello, World!"
 ```
 
 ## Contributing
