@@ -33,7 +33,7 @@ OptionParser.parse do |parser|
     command = :display
 
     parser.on("-l DIST", "--leading=DIST", "Space between lines") { |dist| options.leading = dist.to_i8 }
-    parser.on("-t DIST", "--tracking=DIST", "Space between glyphs") { |dist| options.tracking = dist.to_i8 }
+    parser.on("-t DIST", "--tracking=DIST", "Space between chars") { |dist| options.tracking = dist.to_i8 }
     parser.on("--fore=CHAR", "The foreground character") { |fore| options.fore = fore[0] }
     parser.on("--back=CHAR", "The background character") { |back| options.back = back[0] }
   end
@@ -68,11 +68,11 @@ when :export
   font = Pixelfont::Font.new(path)
 
   puts "# #{path}"
-  puts "GLYPHS : Hash(Char, Tuple(UInt64, UInt8, UInt8)) = {"
-  chars = font.glyphs.keys.sort
+  puts "GRAPHEMES : Hash(Char, Tuple(UInt64, UInt8, UInt8)) = {"
+  chars = font.graphemes.keys.sort
   chars.each do |char|
-    glyph = font.glyphs[char]
-    puts "  '#{char}' => {0x#{glyph.bits.to_s(16).rjust(16, '0')}_u64, #{glyph.width}_u8, #{glyph.height}_u8},"
+    g = font.graphemes[char]
+    puts "  '#{char}' => Grapheme.new(#{g.width}_u16, #{g.height}_u16, Bytes[#{g.data.map { |d| "0x" + d.to_s(16) }.join(", ")}]),"
   end
   puts "}"
 else

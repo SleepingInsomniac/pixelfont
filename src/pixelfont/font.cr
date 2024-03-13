@@ -1,58 +1,31 @@
-require "./glyph"
+require "./grapheme"
+require "./parser"
 
 module Pixelfont
   class Font
-    getter glyphs = {} of Char => Glyph
+    getter graphemes = {} of Char => Grapheme
 
-    property line_height : UInt8 = 0 # height of glyphs
-    property leading : Int8 = 1      # space between lines
-    property tracking : Int8 = 1     # space between glyphs
+    property line_height : UInt16 = 0
+    property leading : Int16 = 1  # space between lines
+    property tracking : Int16 = 1 # space between glyphs
 
     def initialize(path : String)
       File.open(path, "r") do |file|
-        initialize(file)
+        @graphemes = Pixelfont::Parser.new(file).parse
       end
+      @line_height = @graphemes.values.max_of(&.height)
     end
 
     def initialize(io : IO)
-      state = :read_char
-      char_def = uninitialized Char
-      char_width = 0u8
-      char_height = 0u8
-      char_bits = 0u64
-      mask = 1u64 << 63
-      @line_height = 0u8
-
-      while line = io.gets("\n", true)
-        case state
-        when :read_char
-          next if line.blank?
-          char_def = line.size > 1 ? line[1] : line[0]
-          state = :get_data
-        when :get_data
-          if line.blank?
-            @line_height = char_height if char_height > @line_height
-            @glyphs[char_def] = Glyph.new(char_bits, char_width, char_height)
-            char_width = 0u8
-            char_height = 0u8
-            char_bits = 0u64
-            mask = 1u64 << 63
-            state = :read_char
-          else
-            char_height += 1
-            char_width = line.size.to_u8 if line.size > char_width
-            line.chars.each do |char|
-              char_bits |= mask if char != '.'
-              mask >>= 1
-            end
-          end
-        end
-      end
-
-      @glyphs[char_def] = Glyph.new(char_bits, char_width, char_height)
+      @graphemes = Pixelfont::Parser.new(io).parse
+      @line_height = @graphemes.values.max_of(&.height)
     end
 
-    # Provides (x, y) cordinates and a bool for bits in a glyph matrix
+    def initialize(@graphemes)
+      @line_height = @graphemes.values.max_of(&.height)
+    end
+
+    # Provides (x, y) cordinates and if the pixel is on
     #
     # ```
     # font.draw("Hello, World!") do |px, py, bit|
@@ -71,28 +44,38 @@ module Pixelfont
           next
         end
 
-        if glyph = @glyphs[c]?
-          mask = 1_u64 << 63
+        if g = @graphemes[c]?
+          byte = 0
+          bits = uninitialized UInt8
+          mask = 0u8
 
-          0.upto(glyph.height - 1) do |cy|
-            0.upto(glyph.width - 1) do |cx|
+          0.upto(g.height - 1) do |cy|
+            0.upto(g.width - 1) do |cx|
+              if mask == 0
+                mask = 0b1000_0000_u8
+                bits = g.data[byte]? || 0u8
+                byte += 1
+              end
+
               fx = (x + cur_x) + cx
               fy = (y + cur_y) + cy
-              yield fx, fy, mask & glyph.bits > 0
+
+              yield fx, fy, mask & bits > 0
+
               mask >>= 1
             end
           end
 
-          cur_x += glyph.width + @tracking
+          cur_x += g.width + @tracking
         else
-          STDERR.puts "Pixelfont: Unknown glyph '#{glyph}'"
+          STDERR.puts "Pixelfont: Unknown grapheme '#{g}'"
         end
       end
     end
 
     def width_of(string : String)
       widths = string.chars.map do |char|
-        if char = @glyphs[char]?
+        if char = @graphemes[char]?
           char.width.to_i32
         else
           0

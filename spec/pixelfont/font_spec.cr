@@ -3,13 +3,13 @@ require "../spec_helper"
 describe Pixelfont::Font do
   it "parses a font" do
     font = Pixelfont::Font.new("fonts/pixel-5x7")
-    glyph = font.glyphs['A']
-    glyph.bits.should eq(8386581866894852096u64)
-    glyph.width.should eq(5u8)
-    glyph.height.should eq(7u8)
+    g = font.graphemes['A']
+    g.data.should eq(Bytes[116, 99, 31, 198, 32])
+    g.width.should eq(5u16)
+    g.height.should eq(7u16)
   end
 
-  it "displays a glyph" do
+  it "displays a string" do
     font = Pixelfont::Font.new("fonts/pixel-5x7")
     string = "ABC"
     w = (5 * string.size) + (font.tracking * (string.size - 1))
