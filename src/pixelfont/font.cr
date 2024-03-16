@@ -74,15 +74,13 @@ module Pixelfont
     end
 
     def width_of(string : String)
-      widths = string.chars.map do |char|
-        if char = @graphemes[char]?
-          char.width.to_i32
-        else
-          0
+      string.lines.map do |line|
+        widths = line.chars.map do |char|
+          @graphemes[char]?.try(&.width.to_i32) || 0
         end
-      end
 
-      widths.sum + (@tracking * (string.size - 1))
+        widths.sum + (@tracking * (line.size - 1))
+      end.max
     end
 
     def height_of(string : String)
