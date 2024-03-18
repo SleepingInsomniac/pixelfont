@@ -58,17 +58,17 @@ module Pixelfont
           bits = uninitialized UInt8
           mask = 0u8
 
-          width = fixed_width ? set_width : g.width
+          offset = fixed_width ? (set_width - g.width) // 2 : 0
 
           0.upto(g.height - 1) do |cy|
-            0.upto(width - 1) do |cx|
+            0.upto(g.width - 1) do |cx|
               if mask == 0
                 mask = 0b1000_0000_u8
                 bits = g.data[byte]? || 0u8
                 byte += 1
               end
 
-              fx = (x + cur_x) + cx
+              fx = (x + cur_x) + cx + offset
               fy = (y + cur_y) + cy
 
               yield fx, fy, mask & bits > 0
@@ -77,36 +77,42 @@ module Pixelfont
             end
           end
 
-          cur_x += g.width + @tracking
+          cur_x += (fixed_width ? set_width : g.width) + @tracking
         else
           STDERR.puts "Pixelfont: Unknown grapheme '#{c}'"
         end
       end
     end
 
-    def width_of(string : String)
-      string.lines.map do |line|
-        widths = line.chars.map do |char|
-          @graphemes[char]?.try(&.width.to_i32) || 0
+    def width_of(string : String, fixed_width = false)
+      if fixed_width
+        string.lines.max_of do |line|
+          (line.size * (set_width + @tracking)) - @tracking
         end
+      else
+        string.lines.max_of do |line|
+          widths = line.chars.map do |char|
+            @graphemes[char]?.try(&.width.to_i32) || 0
+          end
 
-        widths.sum + (@tracking * (line.size - 1))
-      end.max
+          widths.sum + (@tracking * (line.size - 1))
+        end
+      end
     end
 
     def height_of(string : String)
       (string.lines.size * (@line_height + @leading)) - @leading
     end
 
-    def to_s(string : String, fore : Char = '█', back : Char = ' ')
+    def to_s(string : String, fore : Char = '█', back : Char = ' ', fixed_width = false)
       string = string.upcase if @properties.only_caps?
 
-      width = width_of(string)
+      width = width_of(string, fixed_width)
       height = height_of(string)
 
       buffer = Array(Array(Char)).new(height) { Array(Char).new(width) { back } }
 
-      draw(string) do |x, y, on|
+      draw(string, fixed_width: fixed_width) do |x, y, on|
         buffer[y][x] = fore if on
       end
 

@@ -11,6 +11,7 @@ class Options
   property tracking : Int8 = 1
   property fore : Char = '█'
   property back : Char = ' '
+  property fixed_width = false
 end
 
 command : Symbol? = nil
@@ -36,6 +37,7 @@ OptionParser.parse do |parser|
     parser.on("-t DIST", "--tracking=DIST", "Space between chars") { |dist| options.tracking = dist.to_i8 }
     parser.on("--fore=CHAR", "The foreground character") { |fore| options.fore = fore[0] }
     parser.on("--back=CHAR", "The background character") { |back| options.back = back[0] }
+    parser.on("--fixed-width", "Each character is the same width") { options.fixed_width = true }
   end
 
   parser.on("export", "export a font to its 64 bit components") do
@@ -62,7 +64,7 @@ when :display
   font.tracking = options.tracking
 
   ARGV.each do |string|
-    puts font.to_s(string, options.fore, options.back)
+    puts font.to_s(string, options.fore, options.back, fixed_width: options.fixed_width)
   end
 when :export
   font = Pixelfont::Font.new(path)
