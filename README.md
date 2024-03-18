@@ -36,10 +36,16 @@ end
 
 ## Cli
 
-```zsh
-shards build --release
-./bin/pixelfont -f fonts/pixel-5x7 display "Hello, World!"
-```
+    shards build --release
+
+    # Write text as an array of characters
+    ./bin/pixelfont -i fonts/pixel-5x7.txt display "Hello, World!"
+
+    # Export as binary
+    ./bin/pixelfont -i fonts/pixel-5x7.txt export -o pixel-5x7.pxf -f binary
+
+    # Get the bytes for embeding
+    ./bin/pixelfont -i fonts/pixel-5x7.txt embed
 
 ## Contributing
 

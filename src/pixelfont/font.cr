@@ -3,7 +3,7 @@ require "./parser"
 
 module Pixelfont
   @[Flags]
-  enum Properties
+  enum Properties : UInt32
     OnlyCaps
   end
 
@@ -24,7 +24,7 @@ module Pixelfont
       @line_height = @graphemes.values.max_of(&.height)
     end
 
-    def initialize(@graphemes)
+    def initialize(@graphemes, @properties = Properties::None)
       @line_height = @graphemes.values.max_of(&.height)
     end
 

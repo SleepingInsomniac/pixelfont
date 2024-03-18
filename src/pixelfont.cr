@@ -3,3 +3,4 @@ module Pixelfont
 end
 
 require "./pixelfont/font"
+require "./pixelfont/binary"
