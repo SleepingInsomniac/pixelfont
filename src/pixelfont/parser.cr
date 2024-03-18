@@ -4,14 +4,17 @@ module Pixelfont
   class Parser
     enum State
       Reset
+      ReadProperty
       ReadChar
       ReadData
+      Finished
       Done
     end
 
     @state = State::Reset
     @io : IO
 
+    @properties : Properties = Properties::None
     @graphemes = {} of Char => Grapheme
     @current = uninitialized Grapheme
     @char = uninitialized Char
@@ -24,15 +27,17 @@ module Pixelfont
     def parse
       until @state.done?
         case @state
-        when .reset?     then reset
-        when .read_char? then read_char
-        when .read_data? then read_data
-        when .done?
+        when .reset?         then reset
+        when .read_property? then read_property
+        when .read_char?     then read_char
+        when .read_data?     then read_data
+        when .finished?
+          store_grapheme
+          @state = State::Done
         end
       end
 
-      store_grapheme
-      @graphemes
+      {@properties, @graphemes}
     end
 
     def reset
@@ -40,7 +45,19 @@ module Pixelfont
       @current.height = 0
       @string = ""
       @data.clear
-      @state = State::ReadChar
+      @state = State::ReadProperty
+    end
+
+    def read_property
+      pos = @io.pos
+      read_line.try do |line|
+        if line =~ /:[A-Z][A-Za-z]{2,}/
+          @properties |= Properties.parse(line[1..])
+        else
+          @io.pos = pos
+          @state = State::ReadChar
+        end
+      end
     end
 
     def read_char
@@ -76,7 +93,7 @@ module Pixelfont
       if line = @io.gets("\n", true)
         line
       else
-        @state = State::Done
+        @state = State::Finished
         nil
       end
     end

@@ -2,27 +2,35 @@ require "./grapheme"
 require "./parser"
 
 module Pixelfont
+  @[Flags]
+  enum Properties
+    OnlyCaps
+  end
+
   class Font
     getter graphemes = {} of Char => Grapheme
 
     property line_height : UInt16 = 0
     property leading : Int16 = 1  # space between lines
     property tracking : Int16 = 1 # space between glyphs
+    property properties : Properties = Properties::None
 
     def initialize(path : String)
-      File.open(path, "r") do |file|
-        @graphemes = Pixelfont::Parser.new(file).parse
-      end
-      @line_height = @graphemes.values.max_of(&.height)
+      File.open(path, "r") { |file| initialize(file) }
     end
 
     def initialize(io : IO)
-      @graphemes = Pixelfont::Parser.new(io).parse
+      @properties, @graphemes = Pixelfont::Parser.new(io).parse
       @line_height = @graphemes.values.max_of(&.height)
     end
 
     def initialize(@graphemes)
       @line_height = @graphemes.values.max_of(&.height)
+    end
+
+    # em width or set width of the font
+    getter set_width : UInt16 do
+      @graphemes.max_of { |(_, g)| g.width } || 0u16
     end
 
     # Provides (x, y) cordinates and if the pixel is on
@@ -33,7 +41,8 @@ module Pixelfont
     # end
     # ```
     #
-    def draw(string : String, x = 0, y = 0, &block : Int32, Int32, Bool ->)
+    def draw(string : String, x = 0, y = 0, fixed_width = false, &block : Int32, Int32, Bool ->)
+      string = string.upcase if @properties.only_caps?
       cur_y = 0
       cur_x = 0
 
@@ -49,8 +58,10 @@ module Pixelfont
           bits = uninitialized UInt8
           mask = 0u8
 
+          width = fixed_width ? set_width : g.width
+
           0.upto(g.height - 1) do |cy|
-            0.upto(g.width - 1) do |cx|
+            0.upto(width - 1) do |cx|
               if mask == 0
                 mask = 0b1000_0000_u8
                 bits = g.data[byte]? || 0u8
@@ -68,7 +79,7 @@ module Pixelfont
 
           cur_x += g.width + @tracking
         else
-          STDERR.puts "Pixelfont: Unknown grapheme '#{g}'"
+          STDERR.puts "Pixelfont: Unknown grapheme '#{c}'"
         end
       end
     end
@@ -84,11 +95,12 @@ module Pixelfont
     end
 
     def height_of(string : String)
-      lines = string.lines.size
-      (lines * @line_height) + ((lines - 1) * @leading)
+      (string.lines.size * (@line_height + @leading)) - @leading
     end
 
     def to_s(string : String, fore : Char = '█', back : Char = ' ')
+      string = string.upcase if @properties.only_caps?
+
       width = width_of(string)
       height = height_of(string)
 
