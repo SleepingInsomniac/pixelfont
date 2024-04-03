@@ -1,10 +1,12 @@
 require "option_parser"
 require "colorize"
 
+require "dot_display"
+
 require "./pixelfont"
 require "./pixelfont/binary"
 
-USAGE = "Usage: pixelfont -f FONT_PATH [subcommand] [options]"
+USAGE = "Usage: pixelfont -i FONT_PATH [subcommand] [options]"
 
 enum Format
   Text
@@ -59,6 +61,16 @@ OptionParser.parse do |parser|
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  parser.on("dots", "Display the text as braille dots") do
+    command = :dots
+
+    parser.on("-l DIST", "--leading=DIST", "Space between lines") { |dist| display_options.leading = dist.to_i8 }
+    parser.on("-t DIST", "--tracking=DIST", "Space between chars") { |dist| display_options.tracking = dist.to_i8 }
+    parser.on("--fixed-width", "Each character is the same width") { display_options.fixed_width = true }
+  end
+
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
   parser.on("export", "export a font to its 64 bit components") do
     command = :export
 
@@ -103,6 +115,16 @@ when :display
   ARGV.each do |string|
     puts font.to_s(string, display_options.fore, display_options.back, fixed_width: display_options.fixed_width)
   end
+when :dots
+  font.leading = display_options.leading
+  font.tracking = display_options.tracking
+
+  text = ARGV.join("\n")
+  dd = DotDisplay.new(font.width_of(text).to_u32, font.height_of(text).to_u32)
+  font.draw(text, fixed_width: display_options.fixed_width) do |x, y, on|
+    dd[x, y] = on
+  end
+  puts dd.to_s
 when :export
   case output_options.format
   when Format::Binary

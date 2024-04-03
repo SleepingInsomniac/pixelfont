@@ -8,6 +8,9 @@
     █       █    █ █  █       █    █    █   █ █   █  █
     █      ███  █   █  ████   ███  █     ███  █   █   ██
 
+    ⡖⠒⡄⠄⡀⠀⡀⢀⡀⢠⠀⡔⠢⠀⣀⠀⡀⡀⢀⣆
+    ⡏⠉⠀⡇⡨⠪⡀⢗⣊⠸⡀⡏⠁⠸⣀⠇⡏⢸⠀⢇
+
 When you want a font, but are kinda lazy.
 
 ## Installation
@@ -40,6 +43,9 @@ end
 
     # Write text as an array of characters
     ./bin/pixelfont -i fonts/pixel-5x7.txt display "Hello, World!"
+
+    # Write text as braille dots
+    ./bin/pixelfont -i fonts/pixel-5x7.txt dots "Hello, World!"
 
     # Export as binary
     ./bin/pixelfont -i fonts/pixel-5x7.txt export -o pixel-5x7.pxf -f binary
